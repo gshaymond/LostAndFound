@@ -54,6 +54,9 @@ app.use('/api/items', require('./routes/items'));
 app.use('/api/matches', require('./routes/matches'));
 app.use('/api/messages', require('./routes/messages'));
 
+// Make io available to routes
+app.set('io', io);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
