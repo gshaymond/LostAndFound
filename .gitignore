@@ -82,16 +82,10 @@ jspm_packages/
 ehthumbs.db
 Thumbs.db
 
-# IDE files
+# IDE
 .vscode/
 .idea/
-*.swp
-*.swo
 
 # Build outputs
 dist/
 build/
-
-# Temporary files
-*.tmp
-*.temp
