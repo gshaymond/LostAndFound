@@ -65,7 +65,8 @@ const register = async (req, res) => {
         details: Object.values(error.errors).map(err => err.message)
       });
     }
-    res.status(500).json({ error: 'Server error during registration' });
+    const dev = process.env.NODE_ENV !== 'production';
+    res.status(500).json({ error: 'Server error during registration', ...(dev ? { details: error.message, stack: error.stack } : {}) });
   }
 };
 
@@ -123,7 +124,8 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Server error during login' });
+    const dev = process.env.NODE_ENV !== 'production';
+    res.status(500).json({ error: 'Server error during login', ...(dev ? { details: error.message } : {}) });
   }
 };
 
@@ -146,7 +148,8 @@ const getMe = async (req, res) => {
     });
   } catch (error) {
     console.error('Get profile error:', error);
-    res.status(500).json({ error: 'Server error retrieving profile' });
+    const dev = process.env.NODE_ENV !== 'production';
+    res.status(500).json({ error: 'Server error retrieving profile', ...(dev ? { details: error.message } : {}) });
   }
 };
 
@@ -185,7 +188,8 @@ const updateProfile = async (req, res) => {
         details: Object.values(error.errors).map(err => err.message)
       });
     }
-    res.status(500).json({ error: 'Server error updating profile' });
+    const dev = process.env.NODE_ENV !== 'production';
+    res.status(500).json({ error: 'Server error updating profile', ...(dev ? { details: error.message } : {}) });
   }
 };
 

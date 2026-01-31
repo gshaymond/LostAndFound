@@ -19,16 +19,27 @@ const io = socketIo(server, {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Capture raw JSON body in development to help debug malformed payloads
+app.use(express.json({ verify: (req, res, buf) => { if (process.env.NODE_ENV !== 'production') req.rawBody = buf && buf.toString && buf.toString(); } }));
 app.use(express.urlencoded({ extended: true }));
 
+// Dev-only: log raw body for auth register route
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/auth/register', (req, res, next) => {
+    console.log('RAW REQUEST:', {
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      rawBody: req.rawBody
+    });
+    next();
+  });
+}
+
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lost_found_hub', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lost_found_hub')
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
@@ -65,11 +76,12 @@ app.get('/api/health', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  const dev = process.env.NODE_ENV !== 'production';
+  res.status(500).json({ error: 'Something went wrong!', ...(dev ? { message: err.message, stack: err.stack } : {}) });
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 

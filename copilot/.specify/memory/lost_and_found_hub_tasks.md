@@ -65,44 +65,44 @@ This document breaks down the implementation plan into specific, actionable task
 ## Phase 1: MVP - Basic Item Posting (Weeks 2-3)
 
 ### Backend Development
-**TASK-008** | Implement User Authentication | Phase 1 | 6h | High | TASK-002, TASK-004 | To Do | Backend Dev
+**TASK-008** | Implement User Authentication | Phase 1 | 6h | High | TASK-002, TASK-004 | Done | Backend Dev
 - Create auth controller with register/login functions
 - Implement JWT token generation and validation
 - Add password hashing with bcrypt
 - Create authentication middleware for protected routes
 
-**TASK-009** | Build Item CRUD API | Phase 1 | 8h | High | TASK-004, TASK-008 | To Do | Backend Dev
+**TASK-009** | Build Item CRUD API | Phase 1 | 8h | High | TASK-004, TASK-008 | Done | Backend Dev
 - Implement POST /api/items endpoint for creating items
 - Create GET /api/items with pagination and filtering
 - Add GET /api/items/:id for single item retrieval
 - Implement PUT/DELETE endpoints with ownership validation
 
-**TASK-010** | Add Basic Search Functionality | Phase 1 | 4h | Medium | TASK-009 | To Do | Backend Dev
+**TASK-010** | Add Basic Search Functionality | Phase 1 | 4h | Medium | TASK-009 | Done | Backend Dev
 - Implement text search on item titles and descriptions
 - Add category-based filtering
 - Create location-based filtering (by city/area)
 - Add search result pagination
 
 ### Frontend Development
-**TASK-011** | Create Authentication Routes | Phase 1 | 6h | High | TASK-005, TASK-007 | To Do | Frontend Dev
+**TASK-011** | Create Authentication Routes | Phase 1 | 6h | High | TASK-005, TASK-007 | Done | Frontend Dev
 - Build Login form component with validation
 - Create Register form component
 - Implement JWT token storage in localStorage
 - Add protected route wrapper in SvelteKit
 
-**TASK-012** | Build Item Posting Form | Phase 1 | 6h | High | TASK-011 | To Do | Frontend Dev
+**TASK-012** | Build Item Posting Form | Phase 1 | 6h | High | TASK-011 | Done | Frontend Dev
 - Create comprehensive item posting form in SvelteKit route
 - Add form validation (required fields, data types)
 - Implement category selection dropdown
 - Add date picker for lost/found dates
 
-**TASK-013** | Create Item Listing Route | Phase 1 | 8h | High | TASK-012 | To Do | Frontend Dev
+**TASK-013** | Create Item Listing Route | Phase 1 | 8h | High | TASK-012 | Done | Frontend Dev
 - Build item card component for displaying items
 - Implement grid/list view toggle
 - Add basic search and filter controls
 - Create pagination component for large result sets
 
-**TASK-014** | Connect Frontend to Backend APIs | Phase 1 | 4h | High | TASK-009, TASK-013 | To Do | Full-stack Dev
+**TASK-014** | Connect Frontend to Backend APIs | Phase 1 | 4h | High | TASK-009, TASK-013 | Done | Full-stack Dev
 - Create API service layer with axios
 - Implement error handling for API calls
 - Add loading states for async operations
