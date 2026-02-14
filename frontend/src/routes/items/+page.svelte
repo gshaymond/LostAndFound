@@ -11,10 +11,23 @@
   let search = '';
   let loading = false;
 
+  // Advanced search
+  let address = '';
+  let lat: number | null = null;
+  let lng: number | null = null;
+  let radiusKm: number | null = 10;
+
   const fetchItems = async () => {
     loading = true;
     try {
-      const res = await api.get('/items', { params: { page, limit, search } });
+      const params: any = { page, limit, search };
+      if (lat && lng) {
+        params.lat = lat;
+        params.lng = lng;
+      }
+      if (radiusKm) params.radiusKm = radiusKm;
+
+      const res = await api.get('/items', { params });
       items = res.data.items;
       totalPages = res.data.pagination.pages || 1;
     } catch (err) {
@@ -41,14 +54,55 @@
       fetchItems();
     }
   };
+
+  const geocodeAddress = async () => {
+    if (!address) return;
+    try {
+      const res = await api.post('/geocode', { address });
+      lat = res.data.lat;
+      lng = res.data.lng;
+      // refetch with location
+      page = 1;
+      fetchItems();
+    } catch (err) {
+      console.error('Geocode failed', err);
+      alert('Address lookup failed');
+    }
+  };
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) return alert('Geolocation not supported');
+    navigator.geolocation.getCurrentPosition((pos) => {
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+      page = 1;
+      fetchItems();
+    }, (err) => {
+      console.error('Geo error', err);
+      alert('Unable to get current location');
+    });
+  };
+
+  const clearLocation = () => {
+    lat = null;
+    lng = null;
+    address = '';
+    page = 1;
+    fetchItems();
+  };
 </script>
 
 <section class="container mx-auto mt-8">
   <div class="flex justify-between items-center mb-6">
     <h2 class="text-2xl font-bold">Items</h2>
-    <div>
+    <div class="flex items-center space-x-2">
       <input placeholder="Search" class="border rounded p-2" bind:value={search} on:keydown={(e) => e.key === 'Enter' && fetchItems()} />
-      <a href="/items/new" class="ml-4 bg-green-600 text-white px-3 py-2 rounded">Post Item</a>
+      <input placeholder="Address" class="border rounded p-2" bind:value={address} />
+      <input placeholder="Radius (km)" class="w-28 border rounded p-2" type="number" bind:value={radiusKm} />
+      <button class="px-3 py-2 border rounded" on:click={geocodeAddress}>Lookup</button>
+      <button class="px-3 py-2 border rounded" on:click={useCurrentLocation}>Use my location</button>
+      <button class="px-3 py-2 border rounded" on:click={clearLocation}>Clear</button>
+      <a href="/items/new" class="ml-2 bg-green-600 text-white px-3 py-2 rounded">Post Item</a>
     </div>
   </div>
 

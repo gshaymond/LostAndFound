@@ -69,7 +69,7 @@ const createItem = async (req, res) => {
   }
 };
 
-// @desc    Get all items with filtering and pagination
+// @desc    Get all items with filtering and pagination (supports geospatial radius and date ranges)
 // @route   GET /api/items
 // @access  Public
 const getItems = async (req, res) => {
@@ -84,60 +84,111 @@ const getItems = async (req, res) => {
       city,
       state,
       sortBy = 'createdAt',
-      sortOrder = 'desc'
+      sortOrder = 'desc',
+      lat,
+      lng,
+      radiusKm,
+      dateFrom,
+      dateTo
     } = req.query;
 
-    // Build query
-    const query = { status };
+    // Base filter
+    const filter = { status };
 
     if (type && ['lost', 'found'].includes(type)) {
-      query.type = type;
+      filter.type = type;
     }
 
     if (category) {
-      query.category = category;
+      filter.category = category;
     }
 
     if (city) {
-      query['location.city'] = new RegExp(city, 'i');
+      filter['location.city'] = new RegExp(city, 'i');
     }
 
     if (state) {
-      query['location.state'] = new RegExp(state, 'i');
+      filter['location.state'] = new RegExp(state, 'i');
+    }
+
+    // Date range filtering for either lost or found dates
+    if (dateFrom || dateTo) {
+      const from = dateFrom ? new Date(dateFrom) : new Date(0);
+      const to = dateTo ? new Date(dateTo) : new Date();
+      filter.$or = [
+        { dateFound: { $gte: from, $lte: to } },
+        { dateLost: { $gte: from, $lte: to } }
+      ];
     }
 
     // Text search
     if (search) {
-      query.$text = { $search: search };
+      filter.$text = { $search: search };
     }
 
-    // Pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Sort options
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    // Execute query
-    const items = await Item.find(query)
-      .populate('userId', 'name email phone')
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(parseInt(limit))
-      .lean();
+    // If geospatial filter provided, use aggregation with $geoNear
+    if (lat && lng) {
+      const near = {
+        type: 'Point',
+        coordinates: [parseFloat(lng), parseFloat(lat)]
+      };
+      const maxDistance = radiusKm ? parseFloat(radiusKm) * 1000 : 50000; // default 50km
 
-    // Get total count for pagination
-    const total = await Item.countDocuments(query);
+      const pipeline = [
+        { $geoNear: { near, distanceField: 'dist.calculated', spherical: true, maxDistance, query: filter } },
+        { $sort: { 'dist.calculated': 1, ...sortOptions } },
+        { $skip: skip },
+        { $limit: parseInt(limit) },
+        { $project: { dist: 1, title:1, description:1, category:1, images:1, location:1, type:1, status:1, tags:1, userId:1, createdAt:1 } }
+      ];
 
-    res.json({
-      items,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / parseInt(limit))
-      }
-    });
+      const items = await Item.aggregate(pipeline);
+
+      // Populate user info
+      await Item.populate(items, { path: 'userId', select: 'name email phone' });
+
+      const countPipeline = [
+        { $geoNear: { near, distanceField: 'dist.calculated', spherical: true, maxDistance, query: filter } },
+        { $count: 'total' }
+      ];
+      const countRes = await Item.aggregate(countPipeline);
+      const total = countRes[0] ? countRes[0].total : 0;
+
+      res.json({
+        items,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      });
+
+    } else {
+      // Regular query
+      const items = await Item.find(filter)
+        .populate('userId', 'name email phone')
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean();
+
+      const total = await Item.countDocuments(filter);
+
+      res.json({
+        items,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      });
+    }
   } catch (error) {
     console.error('Get items error:', error);
     res.status(500).json({ error: 'Server error' });

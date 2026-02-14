@@ -3,12 +3,17 @@
   import api from '$lib/api';
   import { token } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
+  import LocationPicker from '$lib/components/LocationPicker.svelte';
+  import ImageUploader from '$lib/components/ImageUploader.svelte';
 
   let type = 'lost';
   let title = '';
   let description = '';
   let category = 'other';
   let location = '';
+  let lat: number | null = null;
+  let lng: number | null = null;
+  let images: string[] = [];
   let dateLost = '';
   let dateFound = '';
   let error = '';
@@ -28,8 +33,14 @@
     error = '';
     loading = true;
     try {
-      const payload: any = { type, title, description, category };
-      if (location) payload.location = { address: location };
+      const payload: any = { type, title, description, category, images };
+      if (location || (lat && lng)) {
+        payload.location = {
+          type: 'Point',
+          coordinates: [lng || 0, lat || 0],
+          address: location
+        };
+      }
       if (type === 'lost' && dateLost) payload.dateLost = dateLost;
       if (type === 'found' && dateFound) payload.dateFound = dateFound;
 
@@ -83,8 +94,13 @@
     </div>
 
     <div>
-      <label class="block text-sm" for="location">Location (city, address)</label>
-      <input id="location" class="w-full border rounded p-2" bind:value={location} />
+      <label class="block text-sm" for="location">Location</label>
+      <LocationPicker bind:address={location} bind:lat bind:lng />
+    </div>
+
+    <div>
+      <label class="block text-sm" for="images">Images</label>
+      <ImageUploader bind:images />
     </div>
 
     {#if type === 'lost'}
